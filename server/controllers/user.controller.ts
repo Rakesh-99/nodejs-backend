@@ -15,6 +15,8 @@ type ResetPasswordParams = {
     passwordToken: string
 }
 
+
+
 // User signup : 
 export const signupUser = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const { username, email, password }: { username: string, email: string, password: string } = req.body;
@@ -273,3 +275,42 @@ export const checkUserProfile = asyncErrorHandler(async (req: Request, res: Resp
         user: rest
     })
 });
+
+
+// Search user api : 
+export const searchUser = asyncErrorHandler(async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    const searchParams = req.params.search;
+    const query = req.query.searchQuery;
+
+    // implement search logic  : 
+    const fetchUser = [];
+    
+    // search through params : 
+    if (searchParams) {
+        fetchUser.push(
+            { username: { $regex: searchParams, $options: "i" } },
+            { email: { $regex: searchParams, $options: "i" } }
+        )
+    }
+    // search through query : 
+    if (query) {
+        fetchUser.push(
+            { username: { $regex: query, $options: "i" } },
+            { email: { $regex: query, $options: "i" } }
+        )
+    }
+
+
+    const user = await userModel.find({ $or: fetchUser });
+
+    if (user.length === 0) {
+        return next(new ErrorHandler(404, "No user found!"));
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: `${user.length} user found`,
+        user: user
+    })
+});
+
